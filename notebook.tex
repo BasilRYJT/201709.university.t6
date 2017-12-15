@@ -141,7 +141,7 @@
     \def\gt{>}
     \def\lt{<}
     % Document parameters
-    \title{quality\_and\_reliability.notes}
+    \title{temporary}
     
     
     
@@ -280,740 +280,231 @@
     
 
     
-    \hypertarget{overview}{%
-\section{Overview}\label{overview}}
+    \hypertarget{hidden-markov-model-hmm}{%
+\subsection{Hidden Markov Model (HMM)}\label{hidden-markov-model-hmm}}
+
+\hypertarget{problem}{%
+\subsubsection{Problem}\label{problem}}
 
 \begin{itemize}
 \tightlist
 \item
-  Introduction
+  Input: vector \(x:\{x_1,x_2,...,x_n\}\in O\)
 \item
-  Statistical process control
+  Output: vector \(y:\{y_1,y_2,...,y_d\}\in T\)
 \item
-  Design of experiments
+  Where \(x\) is the observation and \(y\) is the hidden state
 \item
-  System reliability
+  \(x,y\) is usually categorical, but can be numerical
 \item
-  Six sigma
+  \(x\in\mathbb R,y\in\mathbb R\)
 \end{itemize}
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\hypertarget{modelling}{%
+\subsubsection{Modelling}\label{modelling}}
 
-    \hypertarget{introduction}{%
-\section{Introduction}\label{introduction}}
+\textbf{Generative Tagging Model}\\
+\((x_1,...,x_n,\ y_1,...,y_n)\in S\) \emph{(set of all observed pairs)}
+\(p(x_1,...,x_n,\ y_1,...,y_n)\geq0\forall(x_1,...,x_n,\ y_1,...,y_n)\)
+\(\sum_{(x_1,...,x_n,\ y_1,...,y_n)\in S}p(x_1,...,x_n,\ y_1,...,y_n)=1\)\\
+\(\begin{aligned}y_1^*,...,y_n^*&=\arg\max_{y_1,...,y_n}(x_1,...,x_n,\ y_1,...,y_n)\\&=f(x_1,...,x_n)\end{aligned}\)
 
-\hypertarget{dimensions-of-quality}{%
-\subsection{Dimensions of Quality}\label{dimensions-of-quality}}
+\(\Pr(X_1=x_1,...,X_n=x_n,\ Y_1=y_1,...,Y_n=y_n)=p(x_1,...,x_n,\ y_1,...,y_n)\)
+- \(Y_0=y_0=\text{"START"}\)\\
+- \(Y_{n+1}=y_{n+1}=\text{"STOP"}\)
 
-\begin{itemize}
-\tightlist
-\item
-  Performance \textbf{(operating characteristic)}
-\item
-  Features \textbf{(additional characteristic)}
-\item
-  Reliability \textbf{(likelihood of failure within expected time)}
-\item
-  Durability \textbf{(lifetime of product)}
-\item
-  Serviceability \textbf{(ease of repairs)}
-\item
-  Aesthetics \textbf{(feel of the product)}
-\item
-  Safety \textbf{(product will not harm the user)}
-\item
-  Perception \textbf{(perception of product)}
-\end{itemize}
+\textbf{transition parameters}\\
+\(p(x_1,...,x_n,\ y_0,y_1,...,y_{n+1})=p(y_0,...,y_{n+1})p(x_1,...,x_n\mid y_0,...,y_{n+1})\)
+\(\begin{aligned}p(y_0,...,y_{n+1})&=p(y_0)p(y_1\mid y_0)p(y_2\mid y_0,y_1)...p(y_{n+1}\mid y_0,...,y_n)\\&\approx p(y_0)p(y_1\mid y_0)p(y_2\mid y_1)...p(y_{n+1}\mid y_n)\\&=p(y_1\mid y_0)...p(y_{n+1}\mid y_n)\\&=\prod_{i=1}^{n+1}p(y_i\mid y_{i-1})\end{aligned}\)\\
+\emph{(This is a markov sequence, independent given current tag)}
 
-\hypertarget{quality-control-old-culture}{%
-\subsection{Quality Control (Old
-Culture)}\label{quality-control-old-culture}}
+\textbf{emission parameters}\\
+\(\begin{aligned}p(x_1,...,x_n\mid y_0,...,y_{n+1})&=p(x_1\mid y_0,...,y_{n+1})p(x_2\mid x_1,\ y_0,...,y_{n+1})...p(x_n\mid x_1,...,x_{n-1},\ y_0,...,y_{n+1})\\&\approx p(x_1\mid y_1)p(x_2\mid y_2)...p(x_n\mid y_n)\\&=\prod_{i=1}^np(x_i\mid y_i)\end{aligned}\)\\
+\emph{(word only depends on tag)}
 
-\textbf{Methods:}\\
-- Inspection - Statistical Process Control (SPC) - Design of Experiments
-(DOE)
+\textbf{tagging model}\\
+\(p(x_1,...,x_n,\ y_0,...,y_{n+1})=\prod_{i=1}^{n+1}p(y_i\mid y_{i-1})\prod_{i=1}^np(x_i\mid y_i)\)\\
+\textbf{Generative Process}\\
+1. Set \(y_0 = \text{START}\) and let \(i=1\)\\
+2. Generate tag \(y_i\) from transition parameter
+\(p(y_i\mid y_{i-1})\)\\
+- If \(y_i=\text{STOP}\), terminate process and return
+\(y_0,...,y_{i},x_1,...,x_{i-1}\) - Otherwise, generate \(x_i\) from
+emission parameter \(p(x_i\mid y_i)\) 3. Set \(i=i+1\), repeat from Step
+2
 
-\textbf{Focus:}\\
-- Detection - Reactive - Products
+\textbf{HMM Formal Definition}\\
+HMM is defined by \(<T,O,\theta>\) - \textgreater{} \(T\) is the set of
+states including \(\text{START}\) and \(\text{STOP}\) -
+\(\{0,1,...,\mid T\mid-1\}\) \emph{(0 is START, \textbar{}T\textbar{}-1
+is STOP)} - \textgreater{} \(O\) is the set of observed symbols
+\emph{(i.e.~x: words)} - \textgreater{} \(\theta=<a,b>\) are the
+parameters - transition parameter: \(a_{u,v}=p(y_i=v\mid y_{i-1}=u)\) -
+\(\sum_{v'=1}^{\mid T\mid-1}a_{u,v'}=1 \forall u\) - emission parameter:
+\(b_u(o)=p(x=o\mid y=u)\) - \(\sum_{o\in O}b_u(o)=1 \forall u\)
 
-Using statistical tools to ensure that quality characteristics meet
-specific standards
-
-\begin{itemize}
-\tightlist
-\item
-  Focus on detection
-\item
-  Product oriented
-\end{itemize}
-
-\textbf{tools:} - Descriptive statistics \textbf{(measure quality
-characteristics)} - Acceptance sampling \textbf{(evaluate quality
-problems)} - Statistical process control \textbf{(early detection)} -
-Design of experiments \textbf{(identify factors causing problems)}
-
-\hypertarget{quality-planning}{%
-\subsection{Quality Planning}\label{quality-planning}}
-
-\textbf{Methods:}\\
-- Total Quality Management (TQM) - Six Sigma
-
-\textbf{Focus:}\\
-- Prevention - Proactive - Customers
-
-\hypertarget{total-quality-management-tqm}{%
-\subsubsection{Total Quality Management
-(TQM)}\label{total-quality-management-tqm}}
+\hypertarget{supervised-learning}{%
+\subsubsection{Supervised Learning}\label{supervised-learning}}
 
 \begin{itemize}
 \tightlist
 \item
-  Emphasis: Do things right the first time and every time
-\item
-  Everyone is responsible for the system
-\item
-  Continuous improvement
-\end{itemize}
-
-\hypertarget{six-sigma}{%
-\subsubsection{Six Sigma}\label{six-sigma}}
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-    \hypertarget{statistical-process-control-spc}{%
-\section{Statistical Process Control
-(SPC)}\label{statistical-process-control-spc}}
-
-\begin{itemize}
-\tightlist
-\item
-  Used to monitor and control processes
-\item
-  Use graphical analysis to detect exceptions and changes during process
-  \textbf{(process is in control or not)}
+  transition parameter:
+  \(a_{u,v}=\frac{\text{Count}(u;v)}{\text{Count}(u)}\)
 
   \begin{itemize}
   \tightlist
   \item
-    if no exceptions in output, process is in control
+    percentage of times v appears after u, given u
+  \end{itemize}
+\item
+  emission parameter:
+  \(b_u(o)=\frac{\text{Count}(u\rightarrow o)}{\text{Count}(u)}\)
+
+  \begin{itemize}
+  \tightlist
   \item
-    Otherwise, unacceptable output call for corrective action
+    percentage of times u emits symbol o
   \end{itemize}
 \end{itemize}
 
-\hypertarget{control-charts}{%
-\subsection{Control Charts}\label{control-charts}}
+\hypertarget{decoding}{%
+\subsubsection{Decoding}\label{decoding}}
 
-\textbf{Two components:}\\
-- time-ordered plot of sample statistics - Statistical control limits
+\(\arg\max_{y_1,...,y_n}p(y_0,...,y_{n+1}\mid x_1,...,x_n;\theta)\)
 
-The point is an exception if the point is out of the control limits.
-\textbf{(process is out of control)}
+\(p(x_1,...,x_n,\ y_0,...,y_{n+1};\theta)=\prod_{i=1}^{n+1}a_{y_{i-1},y_i}\prod_{i=1}^nb_{y_i}(x_i)\)
+
+\(\begin{aligned}\arg\max_{y_1,...,y_n}p(y_0,...,y_{n+1}\mid x_1,...,x_n;\theta)&=\arg\max_{y_1,...,y_n}\frac{p(x_1,...,x_n,\ y_0,...,y_{n+1};\theta)}{p(x_1,...,x_n;\theta)}\\&=\arg\max_{y_1,...,y_n}p(x_1,...,x_n,\ y_0,...,y_{n+1};\theta)\end{aligned}\)
+
+\hypertarget{vertibi-algorithm}{%
+\subsubsection{Vertibi Algorithm}\label{vertibi-algorithm}}
+
+joint probability of first k tags\\
+\(r(y_1,...,y_k)=\prod_{i=1}^{k}a_{y_{i-1},y_i}\prod_{i=1}^kb_{y_i}(x_i)\)
+
+\(\begin{aligned}p(x_1,...,x_n,\ y_0,...,y_{n+1})&=r(y_1,...,y_n)\cdot a_{y_{n},y_{n+1}}\\&= r(y_1,...,y_n)\cdot a_{y_{n},\text{STOP}}\end{aligned}\)
+
+\(\pi(k,v)=\max_{(y_1,...,y_k)\in S(k,v)}r(y_1,...,y_k)\) - \(S(k,v)\)
+is the set of all sequences of length k with last tag v
+
+\textbf{Base case}\\
+\(\pi(0,u)=\left\{\begin{array}{cl}1 & \text{if }u=\text{START}\\0 & \text{otherwise}\end{array}\right.\)
+
+\textbf{Forward recursively} \(\forall k\in\{1,...,n\}\)\\
+\(\pi(k,v)\max_{u\in T}\{\pi(k-1,u)\cdot a_{u,v}\cdot b_v(x_k)\}\)
+
+\textbf{Terminate} \(y_n\text{ to STOP}\)\\
+\(\max_{y_1,...,y_n}p(x_1,...,x_n,\ y_0,...,y_{n+1})=\max_{v\in T}\{\pi(n,v)\cdot a_{v,\text{STOP}}\}\)
+
+\textbf{Backtracking}\\
+\(y_n^*=\arg\max_v\{\pi(n,v)\cdot a_{v,\text{STOP}}\}\)\\
+\(y_{n-1}^*=\arg\max_u\{\pi(n-1,u)\cdot a_{u,y_n^*}\}\)\\
+\emph{repeat for all y}
+
+    \hypertarget{unsupervised-learning}{%
+\subsubsection{Unsupervised Learning}\label{unsupervised-learning}}
+
+\hypertarget{hard-em}{%
+\paragraph{Hard EM}\label{hard-em}}
+
+\textbf{E-Step}\\
+observation sequence:
+\(\boldsymbol x^{(i)}= (x_1^{(i)},x_2^{(i)},...,x_n^{(i)})\)\\
+state sequence \emph{(viterbi)}:
+\(\boldsymbol y^{(i)*}= (y_1^{(i)*},y_2^{(i)*},...,y_n^{(i)*})\)
+
+\(\text{Count}(u;v), \text{Count}(u)\ \forall u,v\in T=\{0,1,...,N+1\}\)\\
+\(\text{Count}(u\rightarrow o), \text{Count}(u)\ \forall u\in T,o\in O\)
+
+\textbf{M-Step}\\
+\(a_{u,v}=\frac{\text{Count}(u;v)}{\text{Count}(u)}\)\\
+\(b_u(o)=\frac{\text{Count}(u\rightarrow o}{\text{Count}(u)}\)
+
+\hypertarget{soft-em}{%
+\paragraph{Soft EM}\label{soft-em}}
+
+\textbf{E-Step}\\
+\(\text{Count}(u;v)=\sum_{i=1}^m\sum_yp(\boldsymbol y\mid\boldsymbol x^{(i)})\text{Count}(\boldsymbol x^{(i)},\boldsymbol y,u\rightarrow v)\)
+- where
+\(\text{Count}(\boldsymbol x^{(i)},\boldsymbol y,u\rightarrow v)\) is
+number of times a trasition from u to v occurs in tag sequence y
+corresponding to observation sequence \(x^{(i)}\)
+
+\textbf{M-Step}\\
+\(a_{u,v}=\frac{\text{Count}(u;v)}{\sum_{v'}\text{Count}(u;v')}\) -
+where denominator ensures \(\sum_{v'=1}^{N+1}a_{u,v'}=1\)
+
+marginal posterior probabilities:
+\(p(y_j=u,y_{j+1}=v\mid\boldsymbol x;\theta)=\sum_{\boldsymbol y:y_j=u,y_{j+1}=v}p(\boldsymbol y\mid\boldsymbol x;\theta)\)\\
+\(\sum_yp(\boldsymbol y\mid\boldsymbol x^{(i)})\text{Count}(\boldsymbol x^{(i)},\boldsymbol y,u\rightarrow v)=\sum_{j=0}^np(y_j=u,y_{j+1}=v\mid\boldsymbol x^{(i)};\theta)\)\\
+\(P()\)
+
+\hypertarget{forward-backward-algorithm}{%
+\subsubsection{Forward-Backward
+Algorithm}\label{forward-backward-algorithm}}
+
+For every state sequence y there is - a path through the graph
+\(\text{START}, <1,y_1>,...,<n,y_n>,\text{STOP}\) - state sequence
+\(\boldsymbol y=y_1,...,y_n\) has score equal to
+\(p(\boldsymbol x,\boldsymbol y;\theta)\) - sum of scores for all paths
+from START to state (j,u), \(\alpha_u(j)\) - sum of scores for all paths
+from state (j,u) to STOP, \(\beta_u(j)\)\\
+Given \(x_1,...,x_n\forall u\in 1,...,N,\ j\in1,...,n\)
+
+\textbf{forward probability}\\
+\(\alpha_u(j)=p(x_1,...,x_{j-1},y_j=u;\theta)\) - base case:
+\(\alpha_u(1)=a_{\text{START},u}\forall u\in1,...,N-1\) - recursive
+case:
+\(\alpha_u(j+1)=\sum_v\alpha_v(j)a_{v,u}b_v(x_j)\forall u\in1,...,N-1,\ j\in1,...,n-1\)
+
+\textbf{backward probability}\\
+\(\beta_u(j)=p(x_j,...,x_n\mid y_j=u;\theta)\) - base case:
+\(\beta_u(n)=a_{u,\text{STOP}}b_u(x_n)\forall u\in1,...,N-1\) -
+recursive case:
+\(\beta_u(j)=\sum_va_{u,v}b_u(x_j)\beta_u(j+1)\forall u\in1,...,N-1,\ j\in n-1,...,1\)
+
+\textbf{Transition parameters}\\
+\(\text{Count}(u;v)=\sum_{i=1}^m\text{Count}^{(i)}(u;v)\)\\
+expected number of times we see u,v pair from ith instance\\
+\(\text{Count}^{(i)}(u;v)=\sum_{j=0}^n\frac{1}{Z}\alpha_u(j)b_u(k_j^{(i)})\alpha_{u,v}\beta_u(j+1)\)\\
+\(Z=\sum_{u'}\alpha_{u'}(j)\beta_{u'}(j)\)
+
+\(\text{Count}^{(i)}(u)=\sum_{j=1}^n\frac{1}{Z}\alpha_u(j)\beta_u(j)\)\\
+\(Z=\sum_{u'}\alpha_{u'}(j)\beta_{u'}(j) \forall j\in1,...,n\)
+
+\textbf{emission parameters}\\
+\(\text{Count}(u\rightarrow o)=\sum_{i=1}^m\text{Count}^{(i)}(u\rightarrow o)\)\\
+\(\text{Count}^{(i)}(u\rightarrow)=\sum_{j:x_j^{(i)}=o}\frac{1}{Z}\alpha_u(j)\beta_u(j)\)\\
+\(Z=\sum_{u'}\alpha_{u'}(j)\beta_{u'}(j)\)
+
+\textbf{max marginal decoding}\\
+\(\begin{aligned}y_i^*&=\arg\max_up(y_i=u\mid x_1,...,x_n;\theta)\\&=\arg\max_u\frac{\alpha_u(i)\beta_u(i)}{\sum_v\alpha_v(j)\beta_v(j)}\\&=\arg\max_u\alpha_u(i)\beta_u(i)\end{aligned}\)
+
+    \hypertarget{reinforcement-learning}{%
+\section{Reinforcement Learning}\label{reinforcement-learning}}
 
 \begin{figure}
 \centering
-\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712131943.PNG}
-\caption{Statistical Control Limits}
+\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712150748.PNG}
+\caption{model}
 \end{figure}
 
-\textbf{Control charts can:}\\
-- Distinguish between natural and unnatural variations - Find range of
-natural variation \textbf{(this is the Control Limit)} - Examine whether
-sample variation goes out of range
+\hypertarget{value-iteration-algorithm}{%
+\subsection{Value Iteration algorithm}\label{value-iteration-algorithm}}
 
-\begin{figure}
-\centering
-\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712140309.PNG}
-\caption{Control Chart Usage}
-\end{figure}
+\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712150751.PNG}
 
-\hypertarget{sources-of-variation}{%
-\subsubsection{Sources of Variation}\label{sources-of-variation}}
+\hypertarget{q-value-iteration-algorithm}{%
+\subsection{Q-Value Iteration
+Algorithm}\label{q-value-iteration-algorithm}}
 
-\begin{itemize}
-\tightlist
-\item
-  Natural Variation
+\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712150752.PNG}
 
-  \begin{itemize}
-  \tightlist
-  \item
-    Normal causes inherent in the process
-  \item
-    Can be eliminated through system improvements
-  \end{itemize}
-\item
-  Unnatural Variation
+\hypertarget{q-learning-algorithm}{%
+\subsection{Q Learning Algorithm}\label{q-learning-algorithm}}
 
-  \begin{itemize}
-  \tightlist
-  \item
-    Special causes
-  \item
-    Can also be eliminated
-  \end{itemize}
-\end{itemize}
-
-Process is in control if only natural variations exist in the process
-
-\hypertarget{control-charts-for-variables}{%
-\subsubsection{Control Charts for
-Variables}\label{control-charts-for-variables}}
-
-\begin{itemize}
-\tightlist
-\item
-  monitor characteristics with continous numerical values i.e.~height
-  and weight
-\item
-  small sample size
-\end{itemize}
-
-\hypertarget{x-bar-control-chart}{%
-\paragraph{X-Bar Control Chart}\label{x-bar-control-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  Examine the central tendency of the values
-\item
-  time-ordered plot of sample average, \(\tilde x\)
-\item
-  \(\tilde x\) is the average for each sample
-\item
-  Assumption of normality, sampling distribution follows normal
-  distribution \(\bar X\sim N\left(\mu,\frac{\sigma}{\sqrt{n}}\right)\)
-\item
-  \(3\hat\sigma_{\bar X}=A_2\bar R\)
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(\bar R\): mean of sample range \emph{(refer to R Chart)}
-  \item
-    \(A_2\): factor depending on the sample size \emph{(check table)}
-    \includegraphics{D:/Documents/projects/201709.university.t6/assets/201712132356.PNG}
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{r-chart}{%
-\paragraph{R Chart}\label{r-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  Examine the variations in the values
-\item
-  time-ordered plot of sample average \(R\)
-\item
-  \(R\) is the maximum range for each sample i.e.~largest value -
-  smallest value
-\item
-  unlike X-Bar chart, the control limits for R charts are not
-  symmetrical around the mean value
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Upper Control Limit: \(D_4\bar R\)
-  \item
-    Lower Control Limit: \(D_3\bar R\)
-
-    \begin{itemize}
-    \tightlist
-    \item
-      \(D3,D4\): factor depending on the sample size \emph{(check
-      table)}
-    \end{itemize}
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{s-chart}{%
-\paragraph{S Chart}\label{s-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  Alternative to R Chart when long-term analysis and large sample size
-\item
-  When used, X-Bar values for \(\sigma_{\bar X}\) changes
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(\sigma_{\bar X}^2=\frac{1}{n-1}\sum_{i=1}^n(x_i-\bar x)^2\)
-    \emph{(unbiased estimator)}
-  \end{itemize}
-\item
-  The S Chart has control limits:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Upper Control Limit: \(B_4\bar S\)
-  \item
-    Lower Control Limit: \(B_3\bar S\)
-
-    \begin{itemize}
-    \tightlist
-    \item
-      \(B3,B4\): factor depending on the sample size \emph{(check
-      table)}
-    \end{itemize}
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{control-charts-for-attributes}{%
-\subsubsection{Control Charts for
-Attributes}\label{control-charts-for-attributes}}
-
-\begin{itemize}
-\tightlist
-\item
-  monitor characteristics with discrete numerical values i.e.~number of
-  defects
-\item
-  large sample size
-\end{itemize}
-
-\hypertarget{p-chart}{%
-\paragraph{P Chart}\label{p-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  measure proportion of occurances i.e.~percentage of faulty items
-\item
-  Control Limits: \(\hat p\pm3\sigma_p\)
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(\sigma_p=\sqrt{\frac{\hat p(1-\hat p)}{n}}\)
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{c-chart}{%
-\paragraph{C Chart}\label{c-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  measure number of occurences i.e.~number of faulty items
-
-  \begin{itemize}
-  \tightlist
-  \item
-    when P Chart cannot used, non-binary classification of occurences
-  \end{itemize}
-\item
-  Control Limits: \(\max(\bar c\pm3\sqrt{\bar c}, 0)\) \emph{(lower
-  limit is nonnegative)}
-\end{itemize}
-
-\hypertarget{u-chart}{%
-\paragraph{U Chart}\label{u-chart}}
-
-\begin{itemize}
-\tightlist
-\item
-  replaces C Chart when data has varying sample sizes
-\item
-  also measures the number of occurences like C Chart
-\item
-  control limits are non-constant step functions
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Control Limits: \(\bar u\pm3\sqrt{\frac{\bar u}{n}}\) \emph{(changes
-    with n)}
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{zones-in-control-charts}{%
-\subsubsection{Zones in Control Charts}\label{zones-in-control-charts}}
-
-\begin{figure}
-\centering
-\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712140325.PNG}
-\caption{Control Chart Zones}
-\end{figure}
-
-\hypertarget{rules-for-out-of-control-processes}{%
-\subsubsection{Rules for Out-of-Control
-Processes}\label{rules-for-out-of-control-processes}}
-
-\textbf{Process is out-of-control, if one or more of the following is
-true:}\\
-1. one point is above the upper control limit line or below the lower
-control limit line 2. two of three consecutive points fall in zone A 3.
-four of five consecutive points fall in zone A or B 4. nine consecutive
-points fall on one side of the center line (above or below) 5. six
-consecutive points trend upwards or downwards
-
-\hypertarget{process-capability}{%
-\subsubsection{Process Capability}\label{process-capability}}
-
-\begin{itemize}
-\tightlist
-\item
-  Ability of a production process to meet product specification
-\item
-  Product Specification \textbf{(tolerence limits)}
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Acceptable range for quality characteristic
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{capability-indices}{%
-\paragraph{Capability Indices}\label{capability-indices}}
-
-\begin{itemize}
-\tightlist
-\item
-  Process Capability Index,
-  \(C_p = \frac{\text{USL} - \text{LSL}}{6\sigma}\)
-
-  \begin{itemize}
-  \tightlist
-  \item
-    USL: Upper Specification Limit
-  \item
-    LSL: Lower Specification Limit
-  \item
-    \(\sigma\): output standard diviation
-    \includegraphics{D:/Documents/projects/201709.university.t6/assets/201712140412.PNG}
-  \end{itemize}
-\item
-  One-sided Limits:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Upper Capability Index, \(C_{pu}=\frac{\text{USL}-\mu}{3\sigma}\)
-  \item
-    Lower Capability Index, \(C_{pl}=\frac{\mu-\text{LSL}}{3\sigma}\)
-  \item
-    Captures incapable process when process not centered
-  \item
-    Used when only one-side limit is given i.e.~minimum quality
-  \end{itemize}
-\item
-  Process Capability Index, \(C_{pk}=\min\{C_{pu},C_{pl}\}\)
-\end{itemize}
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-    \hypertarget{design-of-experiments-doe}{%
-\section{Design of Experiments (DOE)}\label{design-of-experiments-doe}}
-
-\begin{itemize}
-\tightlist
-\item
-  Test for factors that cause variability
-
-  \begin{itemize}
-  \tightlist
-  \item
-    find impact of inputs on process output
-  \item
-    obtain estimated target levels of inputs
-  \end{itemize}
-\end{itemize}
-
-\textbf{Procedure:}\\
-- Conjecture \textbf{(hypothesis)} - Experiment \textbf{(perform tests)}
-- Analysis \textbf{(statistical analysis of experiment data)} -
-Conclusion \textbf{(accept/reject hypothesis)}
-
-\textbf{Main challenge:} minimise noise
-
-\textbf{Terminology:} - Input variability - Factors: controllable
-variables of interest - Nuisance: variables that affect the experiment
-but are not controllable or not of interest - Levels: setting/value of
-factors - Response: output - Treatment: combination of levels of factors
-- Experimental Unit (EU): the material being tested by the treatment
-i.e.~patients or lab rats
-
-\hypertarget{basic-experiment-design}{%
-\subsection{Basic Experiment Design}\label{basic-experiment-design}}
-
-\hypertarget{comparison-of-two-population-means}{%
-\subsubsection{Comparison of Two Population
-Means}\label{comparison-of-two-population-means}}
-
-\hypertarget{two-independent-population}{%
-\paragraph{Two independent
-population}\label{two-independent-population}}
-
-\begin{itemize}
-\tightlist
-\item
-  The samples were drawn from independent populations i.e.~patients
-  taking drug A or drug B
-\end{itemize}
-
-\textbf{Steps:} 1. Conditions: independent samples, \(n > 30\) 2.
-Hypothesis:
-\(\begin{aligned}H_0&:\mu_A-\mu_B=0\\H_a&:\mu_A-\mu_B\neq0\end{aligned}\)
-3. Estimator: \(\mu_A-\mu_B\approx\bar y_A -\bar y_B\) 4. Sampling
-distribution of sample mean difference:
-\(\bar y_A -\bar y_B\sim N\left(\mu_A-\mu_B, \frac{\sigma_A^2}{n_A}+\frac{\sigma_B^2}{n_B}\right)\)
-5. Test statistic and p-value: \(z=\frac{}{}\) 6. Accept or reject
-\(H_0\)
-
-\hypertarget{two-dependent-population}{%
-\paragraph{Two dependent population}\label{two-dependent-population}}
-
-\begin{itemize}
-\tightlist
-\item
-  The samples were drawn from related populations i.e.~same patient
-  taking drug A then drug B
-\end{itemize}
-
-\textbf{Steps:} 1. Conditions: dependent samples, \(n < 30\) 2.
-Hypothesis:
-\(\begin{aligned}H_0&:\mu_A-\mu_B=0\\H_a&:\mu_A-\mu_B\neq0\end{aligned}\)
-3. Estimator: \(\mu_A-\mu_B\approx\bar d\) \emph{(mean of paired
-difference)} 4. Sampling distribution of sample mean difference:
-\(\bar d\sim t\left(\mu_A-\mu_B, \frac{\sigma_d^2}{n}\right)\) 5. Test
-statistic and p-value 6. Accept or reject \(H_0\)
-
-\hypertarget{completely-randomized-experiment}{%
-\subsection{Completely Randomized
-Experiment}\label{completely-randomized-experiment}}
-
-\begin{itemize}
-\tightlist
-\item
-  Experiment to test the effects of the primary factor
-\item
-  Applied when all EU are similar and only source of variation is
-  primary factor
-\item
-  levels of primary factor assigned at random
-\item
-  if all treatments are equally important, balance design used
-\end{itemize}
-
-\textbf{Comparisons of Variances:} - variation within groups:
-\(\sigma^2\) estimated by the variance of each sample, \(s^2_W\) -
-variation between groups: if means are equal, \(\sigma^2\) can be
-estimated by \(s^2_B\), the product of sample size and the sample
-variance of sample means
-\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712140902.PNG}
-\emph{(both should be equal if means are equal)}
-
-\textbf{Hypothesis Testing:} 1. Hypothesis:
-\(\begin{aligned}H_0&:\mu_1=\mu_2=\mu_3\\H_a&:\text{not all population means are the same}\end{aligned}\)
-2. Estimator: \(\frac{s_B^2}{s_W^2}\) - close to 1 in normal cases -
-follows F-distribution if between 2-12 degrees of freedom 3. Test
-statistic and p-value: \(\frac{s_B^2}{s_W^2}\) 4. Accept or reject
-\(H_0\)
-
-\textbf{cases} - balanced (\(n_i=n_j, \forall i,j\)) - unbalanced
-(one-way anova)\\
-\(\frac{s^2_B}{s_W^2}=\frac{\sum_{i=1}^kn_i(\bar y_i-\bar y)^2/(k-1)}{\sum_{i=1}^k\sum_{j=1}^{n_i}(y_{ij}-\bar y_i)^2/(N-k)}=\frac{\text{SSB: Sum of square between groups}/(k-1)}{\text{SSW: Sum of square within groups}/(N-k)}=\frac{\text{MSB}}{\text{MSW}}\)
-
-\textbf{terminologies} - SS: sum of squares of observantion from the
-mean - MS: mean squares = SS/Degrees of freedom
-
-\hypertarget{randomized-complete-block-experiment}{%
-\subsection{Randomized Complete Block
-Experiment}\label{randomized-complete-block-experiment}}
-
-\begin{itemize}
-\tightlist
-\item
-  when EU are non homogenous, we need to group the similar EU into
-  blocks
-\item
-  Experiment to test the effects of the primary factor while one or more
-  nuisance factors are known and controllable
-\item
-  Similar nuisance factors are in same block
-
-  \begin{itemize}
-  \tightlist
-  \item
-    each treatment is assigned to every block
-  \item
-    with each treatment randomly assigned within the block
-  \end{itemize}
-\item
-  use two-way ANOVA
-  \includegraphics{D:/Documents/projects/201709.university.t6/assets/201712140938.PNG}
-\end{itemize}
-
-    \hypertarget{factorial-design}{%
-\subsection{Factorial Design}\label{factorial-design}}
-
-\begin{itemize}
-\tightlist
-\item
-  Studies the effect of two or more factors
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Main effect: how the response changes with each factor
-  \item
-    Interaction effect: how one factor affects the effectiveness of
-    another factor
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{calculation-of-effects}{%
-\subsubsection{Calculation of Effects}\label{calculation-of-effects}}
-
-\begin{itemize}
-\tightlist
-\item
-  Main Effect: \(A=\bar y_{A^+}-\bar y_{A^-}\)
-\item
-  Interaction Effect:
-  \(AB=\frac{1}{2}[(y_{A^+B^+}-y_{A^-B^+})-(y_{A^+B^-}-y_{A^-B^-})]\)
-\end{itemize}
-
-\hypertarget{factorial-anova}{%
-\subsubsection{Factorial ANOVA}\label{factorial-anova}}
-
-\begin{itemize}
-\tightlist
-\item
-  ANOVA with more than two factors with more than one level
-\item
-  Notation: 2x3x4 ANOVA, 3 factors with 2,3,4 levels respectively
-\end{itemize}
-
-\begin{figure}
-\centering
-\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712141333.PNG}
-\caption{two factor ANOVA}
-\end{figure}
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-    \hypertarget{system-reliability}{%
-\section{System Reliability}\label{system-reliability}}
-
-\hypertarget{time-to-failure}{%
-\subsection{Time-to-Failure}\label{time-to-failure}}
-
-\begin{itemize}
-\tightlist
-\item
-  Mean Time to Failure, \(\text{MTTF} = \int_0^\infty tf(t)\ dt\)
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(f(t)\): probability density function
-  \item
-    \(F(t)\): cumalative distribution function
-  \end{itemize}
-\item
-  Reliability:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    Discrete: \(R(t)=1-F(t-1)\)
-  \item
-    Continuous: \(R(t)=1-F(t)\)
-  \item
-    \(\text{MTTF}=\int_0^\infty R(t)\ dt\)
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{failure-rate}{%
-\subsection{Failure Rate}\label{failure-rate}}
-
-\begin{itemize}
-\item
-  probability of failure in the next unit time
-\item
-  \(\lambda(t)=\frac{f(t)}{R(t)}\)
-\item
-  constant failure rate:
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(\lambda(t)=\frac{f(t)}{R(t)}=\lambda\)
-  \item
-    \(\text{MTTF}=\frac{1}{\lambda}\)
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{life-cycle-curve}{%
-\subsection{Life Cycle Curve}\label{life-cycle-curve}}
-
-\begin{itemize}
-\tightlist
-\item
-  failure rate over time
-\item
-  Normal scenario: Bathtub Curve
-  \includegraphics{D:/Documents/projects/201709.university.t6/assets/201712141351.PNG}
-\end{itemize}
-
-\hypertarget{system-reliability-1}{%
-\subsection{System Reliability}\label{system-reliability-1}}
-
-\hypertarget{in-series}{%
-\subsubsection{In series}\label{in-series}}
-
-\begin{itemize}
-\tightlist
-\item
-  \(R_s=R_1\times R_2\times...\times R_n\)
-\item
-  For Exponential model
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(R_i=e^{-\lambda_i t}\)
-  \item
-    \(R_s = e^{-\sum_{i=1}^n\lambda_it}\)
-  \item
-    \(\lambda_s = \sum_{i=1}^n\lambda_i\)
-  \item
-    \(\text{MTTF}=\frac{1}{\sum_{i=1}^n\lambda_i}\)
-  \end{itemize}
-\end{itemize}
-
-\hypertarget{in-parallel}{%
-\subsubsection{In Parallel}\label{in-parallel}}
-
-\begin{itemize}
-\tightlist
-\item
-  System failure probability, \(F_s=\prod_{i=1}^n(1-R_i)\)
-\item
-  \(R_s=1-F= 1-\prod_{i=1}^n(1-R_i)\)
-\item
-  For exponential model
-
-  \begin{itemize}
-  \tightlist
-  \item
-    \(R_i=e^{-\lambda_i t}\)
-  \item
-    \(R_s=1-\prod_{i=1}^n(1-e^{-\lambda_it})\)
-  \item
-    \(\text{MTTF}=\int_0^nR_s\ dt\)
-  \item
-    if all failure rate the same,
-    \(\text{MTTF}=\frac{1}{\lambda}\times(1+\frac{1}{2}+\frac{1}{3}+...+\frac{1}{n})\)
-  \end{itemize}
-\end{itemize}
+\includegraphics{D:/Documents/projects/201709.university.t6/assets/201712150754.PNG}
 
 
     % Add a bibliography block to the postdoc
